@@ -375,7 +375,6 @@ export default class Gizmo {
     // TODO: create PlaneGizmo
   }
 
-  // The Gizmo should be attached when the other primitives are added to the scene, for depth test
   attach(viewer) {
     this._viewer = viewer;
     this._viewer.scene.primitives.add(this._transPrimitives);
