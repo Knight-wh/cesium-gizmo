@@ -1,3 +1,6 @@
+/**
+ * https://github.com/zhwy/cesium-gizmo/blob/main/src/GizmoUtil.js
+ */
 import * as Cesium from "cesium";
 
 function getScaleInPixels(positionWC, radius, frameState) {
