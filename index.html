@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        margin: 0;
+      }
+
+      #cesiumContainer {
+        background: gray;
+        height: 100vh;
+        width: 100%;
+      }
+
+      .GizmoBar {
+        background: white;
+        position: absolute;
+        bottom: 50px;
+        left: 200px;
+        display: flex;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="cesiumContainer"></div>
+    <div class="GizmoBar">
+      <button id="trans">Trans</button>
+      <button id="rotate">Rotate</button>
+      <button id="scale">Scale</button>
+    </div>
+    <script type="module" src="/src/index.js"></script>
+    <script type="module">
+      import {
+        Cartesian3,
+        Math as CesiumMath,
+        Terrain,
+        Viewer,
+        Model,
+        Transforms,
+        HeadingPitchRoll,
+      } from "cesium";
+      import "cesium/Build/Cesium/Widgets/widgets.css";
+      import { Gizmo } from "./src";
+
+      const gizmo = new Gizmo();
+
+      const viewer = new Viewer("cesiumContainer", {
+        terrain: Terrain.fromWorldTerrain(),
+      });
+
+      gizmo.attach(viewer);
+
+      const btn1 = document.getElementById("trans");
+      const btn2 = document.getElementById("rotate");
+      const btn3 = document.getElementById("scale");
+      btn1.addEventListener("click", () => {
+        gizmo.setMode("translate");
+      });
+      btn2.addEventListener("click", () => {
+        gizmo.setMode("rotate");
+      });
+      btn3.addEventListener("click", () => {
+        gizmo.setMode("scale");
+      });
+
+      const originPoint = Cartesian3.fromDegrees(113, 23, 100);
+
+      viewer.scene.primitives.add(
+        await Model.fromGltfAsync({
+          url: "./assets/CesiumBalloon.glb",
+          modelMatrix: Transforms.headingPitchRollToFixedFrame(
+            originPoint,
+            new HeadingPitchRoll(0, 0, 0),
+          ),
+          debugShowBoundingVolume: false,
+          scale: 1,
+        }),
+      );
+
+      viewer.camera.setView({
+        destination: originPoint,
+        orientation: {
+          heading: 0,
+          pitch: CesiumMath.toRadians(-35),
+          roll: 0,
+        },
+      });
+    </script>
+  </body>
+</html>
