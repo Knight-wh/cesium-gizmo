@@ -21,7 +21,7 @@ const gizmo = new Gizmo();
 gizmo.attach(viewer);
 ```
 
-![Translate Gizmo](assets\translate.jpg)
+![Translate Gizmo](assets/translate.jpg)
 
 ## Development
 
