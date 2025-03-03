@@ -2,11 +2,23 @@
 
 A Simple Cesium Gizmo using Cesuim's Public API.
 
-一个使用Cesium公共API的简易Gizmo
+> Under development.
+
+There're three mode: translate, rotate, scale. And the translate mode has two sub-modes: global and surface.
+
+- global: XYZ coordinates of a freely moving object.
+- surface: moves along the latitude and longitude lines of the ellipsoid's surface.
 
 Thanks to the amzing job from [cesium-gizmo](https://www.github.com/zhwy/cesium-gizmo) and [three.js](https://github.com/mrdoob/three.js) TransformControls
 
-> Under development.
+### 中文
+
+一个使用Cesium公共API的简易Gizmo
+
+有三种模式：平移，旋转，缩放。平移有两种子模式：global 和 surface
+
+- global：自由移动物体的XYZ坐标
+- surface：沿地球表面经纬线移动
 
 ## Usage
 
