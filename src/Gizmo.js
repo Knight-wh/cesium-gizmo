@@ -22,6 +22,7 @@ import {
   ScreenSpaceEventHandler,
   SceneTransforms,
   Transforms,
+  Cartographic,
 } from "cesium";
 import { getScaleForMinimumSize } from "./GizmoUtil";
 
@@ -35,6 +36,11 @@ const GizmoMode = {
   translate: "translate",
   rotate: "rotate",
   scale: "scale",
+};
+
+const TranslateMode = {
+  global: "global",
+  surface: "surface",
 };
 
 class GizmoComponentPrimitive {
@@ -100,6 +106,7 @@ export default class Gizmo {
     this.applyTransformationToMountedPrimitive = true;
     this.modelMatrix = Matrix4.IDENTITY;
     this.length = 200 + 50; // gizmo pixel length;
+    this.transMode = null;
 
     this._viewer = null;
     this._mountedPrimitive = null;
@@ -381,6 +388,7 @@ export default class Gizmo {
     this._viewer.scene.primitives.add(this._rotatePrimitives);
     this._viewer.scene.primitives.add(this._scalePrimitives);
     this.setMode(GizmoMode.translate);
+    this.transMode = TranslateMode.global;
     addPointerEventHandler(this._viewer, this);
   }
 
@@ -473,6 +481,7 @@ let handler;
  * @param {Gizmo} gizmo
  */
 function addPointerEventHandler(viewer, gizmo) {
+  // TODO: optimize javascript object creation
   handler = new ScreenSpaceEventHandler(viewer.canvas);
 
   handler.setInputAction((movement) => {
@@ -580,32 +589,118 @@ function addPointerEventHandler(viewer, gizmo) {
         viewer,
         mouseDirOnWindowCoordinates,
       );
+      // Two translation Mode
+      if (gizmo.transMode === TranslateMode.global) {
+        const transMatrix = Matrix4.fromTranslation(trans, new Matrix4());
+        const resultMatrix = Matrix4.multiply(
+          transMatrix,
+          gizmoStartModelMatrix,
+          transMatrix,
+        );
 
-      const transMatrix = Matrix4.fromTranslation(trans, new Matrix4());
-      const resultMatrix = Matrix4.multiply(
-        transMatrix,
-        gizmoStartModelMatrix,
-        transMatrix,
-      );
+        if (
+          isNaN(resultMatrix[12]) ||
+          isNaN(resultMatrix[13]) ||
+          isNaN(resultMatrix[14])
+        ) {
+          return;
+        }
 
-      if (
-        isNaN(resultMatrix[12]) ||
-        isNaN(resultMatrix[13]) ||
-        isNaN(resultMatrix[14])
-      ) {
-        return;
-      }
+        // apply translation to gizmo
+        gizmo.modelMatrix[12] = resultMatrix[12];
+        gizmo.modelMatrix[13] = resultMatrix[13];
+        gizmo.modelMatrix[14] = resultMatrix[14];
 
-      // apply translation to gizmo
-      gizmo.modelMatrix[12] = resultMatrix[12];
-      gizmo.modelMatrix[13] = resultMatrix[13];
-      gizmo.modelMatrix[14] = resultMatrix[14];
+        if (gizmo.applyTransformationToMountedPrimitive) {
+          const mountedPrimitive = gizmo._mountedPrimitive;
+          mountedPrimitive.modelMatrix[12] = resultMatrix[12];
+          mountedPrimitive.modelMatrix[13] = resultMatrix[13];
+          mountedPrimitive.modelMatrix[14] = resultMatrix[14];
+        }
+      } else if (gizmo.transMode === TranslateMode.surface) {
+        const startCartographic = Cartographic.fromCartesian(gizmoStartPos);
+        const resultCartographic = new Cartographic();
+        const resultPosition = new Cartesian3();
 
-      if (gizmo.applyTransformationToMountedPrimitive) {
-        const mountedPrimitive = gizmo._mountedPrimitive;
-        mountedPrimitive.modelMatrix[12] = resultMatrix[12];
-        mountedPrimitive.modelMatrix[13] = resultMatrix[13];
-        mountedPrimitive.modelMatrix[14] = resultMatrix[14];
+        switch (pickedGizmoId) {
+          case GizmoPart.xAxis: {
+            // TODO: Bad implementation
+            // E
+            const transMatrix = Matrix4.fromTranslation(trans, new Matrix4());
+            Matrix4.multiply(transMatrix, gizmoStartModelMatrix, transMatrix);
+
+            resultPosition.x = transMatrix[12];
+            resultPosition.y = transMatrix[13];
+            resultPosition.z = transMatrix[14];
+
+            Cartographic.fromCartesian(
+              resultPosition,
+              undefined,
+              resultCartographic,
+            );
+            resultCartographic.height = startCartographic.height;
+            resultCartographic.latitude = startCartographic.latitude;
+            break;
+          }
+          case GizmoPart.yAxis: {
+            // N
+            const transMatrix = Matrix4.fromTranslation(trans, new Matrix4());
+            Matrix4.multiply(transMatrix, gizmoStartModelMatrix, transMatrix);
+
+            resultPosition.x = transMatrix[12];
+            resultPosition.y = transMatrix[13];
+            resultPosition.z = transMatrix[14];
+
+            Cartographic.fromCartesian(
+              resultPosition,
+              undefined,
+              resultCartographic,
+            );
+            resultCartographic.height = startCartographic.height;
+            break;
+          }
+          case GizmoPart.zAxis: {
+            // U
+            startCartographic.height += trans.z;
+            Cartographic.clone(startCartographic, resultCartographic);
+            break;
+          }
+        }
+
+        Cartographic.toCartesian(resultCartographic, undefined, resultPosition);
+
+        const transform = Transforms.eastNorthUpToFixedFrame(gizmoStartPos);
+        const transformInverse = Matrix4.inverseTransformation(
+          transform,
+          new Matrix4(),
+        );
+        const before = Matrix4.multiply(
+          transformInverse,
+          gizmoStartModelMatrix,
+          new Matrix4(),
+        );
+        const transformNew = Transforms.eastNorthUpToFixedFrame(resultPosition);
+        const resultMatrix = Matrix4.multiply(
+          transformNew,
+          before,
+          new Matrix4(),
+        );
+
+        if (
+          isNaN(resultMatrix[12]) ||
+          isNaN(resultMatrix[13]) ||
+          isNaN(resultMatrix[14])
+        ) {
+          return;
+        }
+
+        // apply translation to gizmo
+        gizmo.modelMatrix = resultMatrix;
+
+        if (gizmo.applyTransformationToMountedPrimitive) {
+          const mountedPrimitive = gizmo._mountedPrimitive;
+          mountedPrimitive.modelMatrix = resultMatrix;
+        }
       }
     } else if (gizmo.mode === GizmoMode.rotate) {
       const rotate = getRotate(
