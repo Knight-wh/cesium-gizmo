@@ -1,6 +1,6 @@
 # cesium-gizmo
 
-A Simple Cesium Gizmo using Cesuim's Public API.
+A Simple Cesium Gizmo using Cesium's Public API.
 
 > Under development.
 
@@ -9,7 +9,7 @@ There're three mode: translate, rotate, scale. And the translate mode has two su
 - global: XYZ coordinates of a freely moving object.
 - surface: moves along the latitude and longitude lines of the ellipsoid's surface.
 
-Thanks to the amzing job from [cesium-gizmo](https://www.github.com/zhwy/cesium-gizmo) and [three.js](https://github.com/mrdoob/three.js) TransformControls
+Thanks to the amazing job from [cesium-gizmo](https://www.github.com/zhwy/cesium-gizmo) and [three.js](https://github.com/mrdoob/three.js) TransformControls
 
 ### 中文
 
