@@ -39,7 +39,7 @@ const GizmoMode = {
 };
 
 const TranslateMode = {
-  global: "global",
+  local: "local",
   surface: "surface",
 };
 
@@ -97,8 +97,8 @@ class GizmoComponentPrimitive {
 }
 
 /**
- * A Simple Cesium Gizmo using Cesuim's Public API
- * Thanks to the amzing job from https://www.github.com/zhwy/cesium-gizmo and three.js TransformControls
+ * A Simple Cesium Gizmo using Cesium's Public API
+ * Thanks to the amazing job from https://www.github.com/zhwy/cesium-gizmo and three.js TransformControls
  */
 export default class Gizmo {
   constructor() {
@@ -139,7 +139,7 @@ export default class Gizmo {
     const lineLength = 0.8;
     const lineRadius = 0.01;
 
-    // reuseable geometry。可以使用polyline Arrow，或者 polyline Volumn！！！
+    // reuseable geometry。可以使用polyline Arrow，或者 polyline Volume！！！
     const arrowGeometry = new CylinderGeometry({
       length: arrowLength,
       topRadius: 0,
@@ -388,7 +388,7 @@ export default class Gizmo {
     this._viewer.scene.primitives.add(this._rotatePrimitives);
     this._viewer.scene.primitives.add(this._scalePrimitives);
     this.setMode(GizmoMode.translate);
-    this.transMode = TranslateMode.global;
+    this.transMode = TranslateMode.local;
     addPointerEventHandler(this._viewer, this);
   }
 
@@ -400,7 +400,7 @@ export default class Gizmo {
     removePointerEventHandler();
   }
 
-  isGizmoPrimitve(primitive) {
+  isGizmoPrimitive(primitive) {
     return (
       this._transPrimitives._part.indexOf(primitive) !== -1 ||
       this._rotatePrimitives._part.indexOf(primitive) !== -1 ||
@@ -488,7 +488,7 @@ function addPointerEventHandler(viewer, gizmo) {
     const picked = viewer.scene.pick(movement.position);
     // console.log(picked);
     if (defined(picked)) {
-      if (!gizmo.isGizmoPrimitve(picked.primitive)) {
+      if (!gizmo.isGizmoPrimitive(picked.primitive)) {
         if (picked.primitive.modelMatrix instanceof Matrix4) {
           gizmo._mountedPrimitive = picked.primitive;
           gizmo.modelMatrix = picked.primitive.modelMatrix.clone();
@@ -582,7 +582,7 @@ function addPointerEventHandler(viewer, gizmo) {
       return;
     }
 
-    // modelMatrix = transfrom * rotation * scale
+    // modelMatrix = transform * rotation * scale
     if (gizmo.mode === GizmoMode.translate) {
       const trans = getTrans(
         pickedGizmoId,
@@ -590,7 +590,7 @@ function addPointerEventHandler(viewer, gizmo) {
         mouseDirOnWindowCoordinates,
       );
       // Two translation Mode
-      if (gizmo.transMode === TranslateMode.global) {
+      if (gizmo.transMode === TranslateMode.local) {
         const transMatrix = Matrix4.fromTranslation(trans, new Matrix4());
         const resultMatrix = Matrix4.multiply(
           transMatrix,
@@ -724,10 +724,10 @@ function addPointerEventHandler(viewer, gizmo) {
       if (gizmo.applyTransformationToMountedPrimitive) {
         const mountedPrimitive = gizmo._mountedPrimitive;
 
-        const transfrom = Transforms.eastNorthUpToFixedFrame(gizmoStartPos);
+        const transform = Transforms.eastNorthUpToFixedFrame(gizmoStartPos);
 
         const transformInverse = Matrix4.inverseTransformation(
-          transfrom,
+          transform,
           new Matrix4(),
         );
 
@@ -750,9 +750,9 @@ function addPointerEventHandler(viewer, gizmo) {
         );
 
         const resultMatrix2 = Matrix4.multiplyByMatrix3(
-          transfrom,
+          transform,
           result,
-          transfrom,
+          transform,
         );
 
         mountedPrimitive.modelMatrix = resultMatrix2;
@@ -812,9 +812,9 @@ function getTrans(gizmoPartId, viewer, mouseDirOnWindowCoordinates) {
       break;
   }
   // calc xAis 在screen的方向
-  const transfrom = Transforms.eastNorthUpToFixedFrame(gizmoStartPos);
+  const transform = Transforms.eastNorthUpToFixedFrame(gizmoStartPos);
   const axisDirOnWorldCoordinates = Matrix4.multiplyByPointAsVector(
-    transfrom,
+    transform,
     axisDir,
     new Cartesian3(),
   );
