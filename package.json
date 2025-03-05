@@ -2,6 +2,10 @@
   "name": "cesium-gizmo",
   "version": "0.0.3",
   "description": "A Simple Cesium Gizmo using Cesium's Public API.",
+  "keywords": [
+    "cesium",
+    "gizmo"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

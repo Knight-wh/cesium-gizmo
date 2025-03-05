@@ -37,7 +37,7 @@ gizmo.attach(viewer);
 
 ## Development
 
-This repository contains an example.
+This repository contains an example in index.html.
 
 ```sh
 npm install
@@ -53,15 +53,15 @@ npm run build
 ## Available scripts
 
 - `npm run eslint` - Lint this project
-- `npm run prettier` - Format all the code to a consistant style
+- `npm run prettier` - Format all the code to a consistent style
 - `npm run prettier-check` - Check the format of code but do not change it
 - `npm run dev` - Starts the Vite development server server at `localhost:5173`
 - `npm run build` - Runs the Vite production build
 
 ## Thanks
 
-[cesium-vite-example](https://github.com/CesiumGS/cesium-vite-example)
-
 [cesium-gizmo](https://www.github.com/zhwy/cesium-gizmo)
+
+[cesium-vite-example](https://github.com/CesiumGS/cesium-vite-example)
 
 [教程 - 在 Vue3+Ts 中引入 CesiumJS 的最佳实践@2023](https://juejin.cn/post/7219674355491340348)
