@@ -1,3 +1,3 @@
-import Gizmo from "./Gizmo";
+import { Gizmo, GizmoMode, TranslateMode } from "./Gizmo";
 
-export { Gizmo };
+export { Gizmo, GizmoMode, TranslateMode };

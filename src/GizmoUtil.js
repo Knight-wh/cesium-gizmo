@@ -65,4 +65,5 @@ function getScaleForMinimumSize(model, frameState) {
 
   return scale;
 }
+
 export { getScaleForMinimumSize };

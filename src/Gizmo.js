@@ -101,7 +101,7 @@ class GizmoComponentPrimitive {
  * A Simple Cesium Gizmo using Cesium's Public API
  * Thanks to the amazing job from https://www.github.com/zhwy/cesium-gizmo and three.js TransformControls
  */
-export default class Gizmo {
+class Gizmo {
   constructor(options) {
     options = defaultValue(options, {});
 
@@ -1074,4 +1074,4 @@ function getScale(
   return scale;
 }
 
-export { Gizmo };
+export { Gizmo, GizmoMode, TranslateMode };
