@@ -475,13 +475,17 @@ function computeCircle(r) {
   return points;
 }
 
-// TODO: optimize javascript object creation
 let startPos = new Cartesian2(); // For Trans and Rotate
 let gizmoStartPos = new Cartesian3();
 let gizmoStartModelMatrix = new Matrix4();
 let mountedPrimitiveStartModelMatrix = new Matrix4(); // For Scale
 let pickedGizmoId = null;
 let handler;
+
+const scratchTransMatrix = new Matrix4();
+const scratchRotateScale = new Cartesian3();
+const scratchRotateMatrix = new Matrix4();
+const scratchScaleMatrix = new Matrix4();
 
 /**
  *
@@ -606,7 +610,7 @@ function addPointerEventHandler(viewer, gizmo) {
       );
       // Two translation Mode
       if (gizmo.transMode === TranslateMode.local) {
-        const transMatrix = Matrix4.fromTranslation(trans, new Matrix4());
+        const transMatrix = Matrix4.fromTranslation(trans, scratchTransMatrix);
         const resultMatrix = Matrix4.multiply(
           transMatrix,
           gizmoStartModelMatrix,
@@ -757,13 +761,13 @@ function addPointerEventHandler(viewer, gizmo) {
 
       const scale = Matrix4.getScale(
         mountedPrimitive.modelMatrix,
-        new Cartesian3(),
+        scratchRotateScale,
       );
 
       const resultMatrix = Matrix4.multiplyByScale(
         gizmoStartModelMatrix,
         scale,
-        new Matrix4(),
+        scratchRotateMatrix,
       );
 
       if (typeof gizmo.onGizmoPointerMove === "function") {
@@ -790,7 +794,7 @@ function addPointerEventHandler(viewer, gizmo) {
       if (typeof gizmo.onGizmoPointerMove === "function") {
         gizmo.onGizmoPointerMove({
           mode: GizmoMode.scale,
-          result: Matrix4.fromScale(scale, new Matrix4()),
+          result: Matrix4.fromScale(scale, scratchScaleMatrix),
         });
       }
 
@@ -800,7 +804,7 @@ function addPointerEventHandler(viewer, gizmo) {
         const resultMatrix = Matrix4.multiplyByScale(
           mountedPrimitiveStartModelMatrix,
           scale,
-          new Matrix4(),
+          scratchScaleMatrix,
         );
 
         Matrix4.clone(resultMatrix, mountedPrimitive.modelMatrix);
