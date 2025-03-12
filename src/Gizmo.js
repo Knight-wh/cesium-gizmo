@@ -23,6 +23,7 @@ import {
   SceneTransforms,
   Transforms,
   Cartographic,
+  defaultValue,
 } from "cesium";
 import { getScaleForMinimumSize } from "./GizmoUtil";
 
@@ -101,7 +102,9 @@ class GizmoComponentPrimitive {
  * Thanks to the amazing job from https://www.github.com/zhwy/cesium-gizmo and three.js TransformControls
  */
 export default class Gizmo {
-  constructor() {
+  constructor(options) {
+    options = defaultValue(options, {});
+
     this.mode = null;
     this.applyTransformationToMountedPrimitive = true;
     this.modelMatrix = Matrix4.IDENTITY;
@@ -128,6 +131,10 @@ export default class Gizmo {
     this._highlightMaterial = Material.fromType("Color", {
       color: new Color(1.0, 1.0, 0.0, 0.99),
     });
+
+    this.onGizmoPointerDown = options.onGizmoPointerDown;
+    this.onGizmoPointerUp = options.onGizmoPointerUp;
+    this.onGizmoPointerMove = options.onGizmoPointerMove;
 
     this.createGizmoPrimitive();
   }
@@ -379,7 +386,7 @@ export default class Gizmo {
     );
     this._scalePrimitives = scalePrimitive;
 
-    // TODO: create PlaneGizmo
+    // TODO: create PlaneGizmo, use PlaneGeometry
   }
 
   attach(viewer) {
@@ -468,6 +475,7 @@ function computeCircle(r) {
   return points;
 }
 
+// TODO: optimize javascript object creation
 let startPos = new Cartesian2(); // For Trans and Rotate
 let gizmoStartPos = new Cartesian3();
 let gizmoStartModelMatrix = new Matrix4();
@@ -481,7 +489,6 @@ let handler;
  * @param {Gizmo} gizmo
  */
 function addPointerEventHandler(viewer, gizmo) {
-  // TODO: optimize javascript object creation
   handler = new ScreenSpaceEventHandler(viewer.canvas);
 
   handler.setInputAction((movement) => {
@@ -520,6 +527,10 @@ function addPointerEventHandler(viewer, gizmo) {
         gizmoStartModelMatrix = gizmo.modelMatrix.clone();
         mountedPrimitiveStartModelMatrix =
           gizmo._mountedPrimitive.modelMatrix.clone();
+
+        if (typeof gizmo.onGizmoPointerDown === "function") {
+          gizmo.onGizmoPointerDown();
+        }
       } else {
         pickedGizmoId = null;
         viewer.scene.screenSpaceCameraController.enableRotate = true;
@@ -535,6 +546,10 @@ function addPointerEventHandler(viewer, gizmo) {
       gizmoStartPos = new Cartesian3();
       gizmoStartModelMatrix = new Matrix4();
       mountedPrimitiveStartModelMatrix = new Matrix4();
+
+      if (typeof gizmo.onGizmoPointerUp === "function") {
+        gizmo.onGizmoPointerDown();
+      }
     }
     viewer.scene.screenSpaceCameraController.enableRotate = true;
     viewer.scene.screenSpaceCameraController.enableTranslate = true;
@@ -582,7 +597,7 @@ function addPointerEventHandler(viewer, gizmo) {
       return;
     }
 
-    // modelMatrix = transform * rotation * scale
+    // * modelMatrix = transform * rotation * scale
     if (gizmo.mode === GizmoMode.translate) {
       const trans = getTrans(
         pickedGizmoId,
@@ -610,6 +625,14 @@ function addPointerEventHandler(viewer, gizmo) {
         gizmo.modelMatrix[12] = resultMatrix[12];
         gizmo.modelMatrix[13] = resultMatrix[13];
         gizmo.modelMatrix[14] = resultMatrix[14];
+
+        if (typeof gizmo.onGizmoPointerMove === "function") {
+          gizmo.onGizmoPointerMove({
+            mode: GizmoMode.translate,
+            transMode: TranslateMode.local,
+            result: Matrix4.getTranslation(resultMatrix, new Cartesian3()),
+          });
+        }
 
         if (gizmo.applyTransformationToMountedPrimitive) {
           const mountedPrimitive = gizmo._mountedPrimitive;
@@ -695,11 +718,19 @@ function addPointerEventHandler(viewer, gizmo) {
         }
 
         // apply translation to gizmo
-        gizmo.modelMatrix = resultMatrix;
+        Matrix4.clone(resultMatrix, gizmo.modelMatrix);
+
+        if (typeof gizmo.onGizmoPointerMove === "function") {
+          gizmo.onGizmoPointerMove({
+            mode: GizmoMode.translate,
+            transMode: TranslateMode.surface,
+            result: resultMatrix.clone(),
+          });
+        }
 
         if (gizmo.applyTransformationToMountedPrimitive) {
           const mountedPrimitive = gizmo._mountedPrimitive;
-          mountedPrimitive.modelMatrix = resultMatrix;
+          Matrix4.clone(resultMatrix, mountedPrimitive.modelMatrix);
         }
       }
     } else if (gizmo.mode === GizmoMode.rotate) {
@@ -712,50 +743,38 @@ function addPointerEventHandler(viewer, gizmo) {
         movement.endPosition,
       );
 
-      const resultMatrix = Matrix4.multiplyByMatrix3(
+      Matrix4.multiplyByMatrix3(
         gizmoStartModelMatrix,
         rotate,
         gizmoStartModelMatrix,
       );
 
       // apply rotation to gizmo
-      gizmo.modelMatrix = resultMatrix;
+      Matrix4.clone(gizmoStartModelMatrix, gizmo.modelMatrix);
+
+      // ----
+      const mountedPrimitive = gizmo._mountedPrimitive;
+
+      const scale = Matrix4.getScale(
+        mountedPrimitive.modelMatrix,
+        new Cartesian3(),
+      );
+
+      const resultMatrix = Matrix4.multiplyByScale(
+        gizmoStartModelMatrix,
+        scale,
+        new Matrix4(),
+      );
+
+      if (typeof gizmo.onGizmoPointerMove === "function") {
+        gizmo.onGizmoPointerMove({
+          mode: GizmoMode.rotate,
+          result: Transforms.fixedFrameToHeadingPitchRoll(resultMatrix),
+        });
+      }
 
       if (gizmo.applyTransformationToMountedPrimitive) {
-        const mountedPrimitive = gizmo._mountedPrimitive;
-
-        const transform = Transforms.eastNorthUpToFixedFrame(gizmoStartPos);
-
-        const transformInverse = Matrix4.inverseTransformation(
-          transform,
-          new Matrix4(),
-        );
-
-        const before = Matrix4.multiply(
-          transformInverse,
-          mountedPrimitive.modelMatrix,
-          new Matrix4(),
-        );
-
-        const result = new Matrix3();
-        Matrix3.multiply(
-          Matrix4.getRotation(before, new Matrix3()),
-          rotate,
-          result,
-        );
-        Matrix3.multiplyByScale(
-          result,
-          Matrix4.getScale(before, new Cartesian3()),
-          result,
-        );
-
-        const resultMatrix2 = Matrix4.multiplyByMatrix3(
-          transform,
-          result,
-          transform,
-        );
-
-        mountedPrimitive.modelMatrix = resultMatrix2;
+        Matrix4.clone(resultMatrix, mountedPrimitive.modelMatrix);
       }
     } else if (gizmo.mode === GizmoMode.scale) {
       const scale = getScale(
@@ -767,7 +786,14 @@ function addPointerEventHandler(viewer, gizmo) {
       );
 
       // don't apply scale to gizmo
-      // ---
+
+      if (typeof gizmo.onGizmoPointerMove === "function") {
+        gizmo.onGizmoPointerMove({
+          mode: GizmoMode.scale,
+          result: Matrix4.fromScale(scale, new Matrix4()),
+        });
+      }
+
       if (gizmo.applyTransformationToMountedPrimitive) {
         const mountedPrimitive = gizmo._mountedPrimitive;
 
@@ -777,7 +803,7 @@ function addPointerEventHandler(viewer, gizmo) {
           new Matrix4(),
         );
 
-        mountedPrimitive.modelMatrix = resultMatrix;
+        Matrix4.clone(resultMatrix, mountedPrimitive.modelMatrix);
       }
     }
   }, ScreenSpaceEventType.MOUSE_MOVE);
