@@ -1,6 +1,6 @@
 {
   "name": "cesium-gizmo",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A Simple Cesium Gizmo using Cesium's Public API.",
   "keywords": [
     "cesium",
@@ -31,6 +31,9 @@
     "prettier": "prettier --write --no-config \"**/*\"",
     "prettier-check": "prettier --check --no-config \"**/*\""
   },
+  "peerDependencies": {
+    "cesium": "^1.114.0"
+  },
   "devDependencies": {
     "eslint": "^8.56.0",
     "eslint-config-cesium": "^10.0.2",
@@ -40,9 +43,6 @@
     "prettier": "^3.2.4",
     "vite": "^5.0.8",
     "vite-plugin-static-copy": "^1.0.0"
-  },
-  "dependencies": {
-    "cesium": "^1.114.0"
   },
   "lint-staged": {
     "*.{js,html}": [
