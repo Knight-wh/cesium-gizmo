@@ -53,7 +53,7 @@
         HeadingPitchRoll,
       } from "cesium";
       import "cesium/Build/Cesium/Widgets/widgets.css";
-      import { Gizmo } from "./src";
+      import { Gizmo, GizmoMode } from "./src";
 
       const gizmo = new Gizmo();
 
@@ -71,11 +71,11 @@
       const transMode = document.getElementById("transMode");
 
       btn1.addEventListener("click", () => {
-        gizmo.setMode("translate");
+        gizmo.setMode(GizmoMode.translate);
         transMode.style.visibility = "visible";
       });
       btn2.addEventListener("click", () => {
-        gizmo.setMode("rotate");
+        gizmo.setMode(GizmoMode.rotate);
         transMode.style.visibility = "hidden";
       });
       btn3.addEventListener("click", () => {

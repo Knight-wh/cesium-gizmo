@@ -27,22 +27,22 @@ import {
 } from "cesium";
 import { getScaleForMinimumSize } from "./GizmoUtil";
 
-const GizmoPart = {
+const GizmoPart = Object.freeze({
   xAxis: "xAxis",
   yAxis: "yAxis",
   zAxis: "zAxis",
-};
+});
 
-const GizmoMode = {
+const GizmoMode = Object.freeze({
   translate: "translate",
   rotate: "rotate",
   scale: "scale",
-};
+});
 
-const TranslateMode = {
+const TranslateMode = Object.freeze({
   local: "local",
   surface: "surface",
-};
+});
 
 class GizmoComponentPrimitive {
   constructor(gizmo, mode) {
